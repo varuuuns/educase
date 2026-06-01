@@ -3,6 +3,7 @@ import cors from 'cors';
 import { env } from './config/env';
 import { initializeDatabase } from './config/db';
 import { createProfileRouter } from './routes/profileRoutes';
+import { createAuthRouter } from './routes/authRoutes';
 import { errorHandler } from './middleware/errorHandler';
 
 /**
@@ -25,6 +26,7 @@ async function bootstrap(): Promise<void> {
   });
 
   // --- Routes ---
+  app.use('/api/auth', createAuthRouter());
   app.use('/api/profiles', createProfileRouter());
 
   // --- 404 Handler ---
@@ -43,7 +45,8 @@ async function bootstrap(): Promise<void> {
     console.log('\n🚀 GitHub Profile Analyzer API');
     console.log(`   Server running at: http://localhost:${env.PORT}`);
     console.log(`   Health check:      http://localhost:${env.PORT}/api/health`);
-    console.log(`   API base:          http://localhost:${env.PORT}/api/profiles`);
+    console.log(`   Auth:              http://localhost:${env.PORT}/api/auth`);
+    console.log(`   Profiles:          http://localhost:${env.PORT}/api/profiles`);
     console.log('');
   });
 }

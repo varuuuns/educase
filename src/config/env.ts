@@ -12,6 +12,8 @@ interface EnvConfig {
   DB_SSL: boolean;
   GITHUB_TOKEN: string | undefined;
   API_KEY: string;
+  JWT_SECRET: string;
+  JWT_EXPIRES_IN: string;
 }
 
 function getEnvVar(key: string, required: boolean = true): string {
@@ -32,4 +34,6 @@ export const env: EnvConfig = {
   DB_SSL: getEnvVar('DB_SSL', false).toLowerCase() === 'true',
   GITHUB_TOKEN: getEnvVar('GITHUB_TOKEN', false) || undefined,
   API_KEY: getEnvVar('API_KEY'),
+  JWT_SECRET: getEnvVar('JWT_SECRET'),
+  JWT_EXPIRES_IN: getEnvVar('JWT_EXPIRES_IN', false) || '24h',
 };
