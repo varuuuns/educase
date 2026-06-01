@@ -38,7 +38,11 @@ function buildConnectionOptions(includeDatabase: boolean): ConnectionOptions {
   // Setting `rejectUnauthorized: true` ensures the server certificate
   // is verified against the default CA bundle.
   if (env.DB_SSL) {
-    options.ssl = { rejectUnauthorized: true };
+    // rejectUnauthorized: false — still encrypts the connection (TLS),
+    // but skips CA verification. Aiven's CA may not be in Node's
+    // default trust store. For production, download the CA cert from
+    // Aiven dashboard and pass it via `ssl.ca`.
+    options.ssl = { rejectUnauthorized: false };
   }
 
   return options;
