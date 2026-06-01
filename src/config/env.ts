@@ -14,15 +14,6 @@ interface EnvConfig {
   API_KEY: string;
 }
 
-/**
- * Retrieves an environment variable by key.
- * Throws immediately on startup if a required variable is missing,
- * enforcing a fail-fast approach.
- *
- * @param key - The environment variable name
- * @param required - Whether the variable is mandatory (default: true)
- * @returns The variable's string value, or empty string if optional and absent
- */
 function getEnvVar(key: string, required: boolean = true): string {
   const value = process.env[key];
   if (required && !value) {

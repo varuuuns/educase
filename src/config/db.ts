@@ -3,10 +3,6 @@ import { env } from './env';
 
 let pool: Pool;
 
-/**
- * Returns the initialised MySQL connection pool.
- * Throws if called before `initializeDatabase()`.
- */
 export function getPool(): Pool {
   if (!pool) {
     throw new Error('Database not initialized. Call initializeDatabase() first.');
@@ -14,11 +10,6 @@ export function getPool(): Pool {
   return pool;
 }
 
-/**
- * Builds the common connection options shared by both the temporary
- * connection and the pool. Adds SSL when DB_SSL=true (required by
- * cloud providers like Aiven, PlanetScale, etc.).
- */
 function buildConnectionOptions(includeDatabase: boolean): ConnectionOptions {
   const options: ConnectionOptions = {
     host: env.DB_HOST,
@@ -33,32 +24,14 @@ function buildConnectionOptions(includeDatabase: boolean): ConnectionOptions {
   if (includeDatabase) {
     options.database = env.DB_NAME;
   }
-
-  // Cloud-hosted MySQL (Aiven, PlanetScale, Railway) requires SSL.
-  // Setting `rejectUnauthorized: true` ensures the server certificate
-  // is verified against the default CA bundle.
   if (env.DB_SSL) {
-    // rejectUnauthorized: false — still encrypts the connection (TLS),
-    // but skips CA verification. Aiven's CA may not be in Node's
-    // default trust store. For production, download the CA cert from
-    // Aiven dashboard and pass it via `ssl.ca`.
     options.ssl = { rejectUnauthorized: false };
   }
 
   return options;
 }
 
-/**
- * Bootstraps the database:
- * 1. Attempts to create the schema if it doesn't exist (skipped for
- *    cloud providers that don't allow CREATE DATABASE).
- * 2. Creates a connection pool bound to that schema.
- * 3. Runs all CREATE TABLE IF NOT EXISTS statements.
- */
 export async function initializeDatabase(): Promise<void> {
-  // 1. Try to create the database (local MySQL allows this;
-  //    cloud providers like Aiven pre-create the database, so
-  //    we gracefully skip on failure).
   try {
     const tempConnection = await mysql.createConnection(
       buildConnectionOptions(false)
@@ -68,29 +41,20 @@ export async function initializeDatabase(): Promise<void> {
     );
     await tempConnection.end();
   } catch (error) {
-    // Cloud-hosted MySQL (Aiven, etc.) may deny CREATE DATABASE.
-    // That's fine — the database already exists there.
-    console.log('ℹ️  Skipping CREATE DATABASE (cloud-hosted DB detected)');
+    console.log('Skipping CREATE DATABASE (cloud-hosted DB detected)');
   }
 
-  // 2. Create the connection pool with the database
   pool = mysql.createPool(buildConnectionOptions(true));
 
-  // 3. Verify connectivity
   const connection = await pool.getConnection();
-  console.log('✅ Connected to MySQL successfully');
+  console.log('Connected to MySQL successfully');
   connection.release();
 
-  // 4. Create tables
   await createTables();
 
-  console.log('✅ Database initialized successfully');
+  console.log('db initialized successfully');
 }
 
-/**
- * Runs all CREATE TABLE IF NOT EXISTS statements inside a single
- * connection so they share the same session.
- */
 async function createTables(): Promise<void> {
   const connection = await pool.getConnection();
   try {
