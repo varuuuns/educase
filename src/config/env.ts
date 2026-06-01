@@ -9,6 +9,7 @@ interface EnvConfig {
   DB_USER: string;
   DB_PASSWORD: string;
   DB_NAME: string;
+  DB_SSL: boolean;
   GITHUB_TOKEN: string | undefined;
   API_KEY: string;
 }
@@ -37,6 +38,7 @@ export const env: EnvConfig = {
   DB_USER: getEnvVar('DB_USER'),
   DB_PASSWORD: getEnvVar('DB_PASSWORD'),
   DB_NAME: getEnvVar('DB_NAME'),
+  DB_SSL: getEnvVar('DB_SSL', false).toLowerCase() === 'true',
   GITHUB_TOKEN: getEnvVar('GITHUB_TOKEN', false) || undefined,
   API_KEY: getEnvVar('API_KEY'),
 };

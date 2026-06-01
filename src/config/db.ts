@@ -1,4 +1,4 @@
-import mysql, { Pool } from 'mysql2/promise';
+import mysql, { Pool, ConnectionOptions } from 'mysql2/promise';
 import { env } from './env';
 
 let pool: Pool;
@@ -15,38 +15,69 @@ export function getPool(): Pool {
 }
 
 /**
+ * Builds the common connection options shared by both the temporary
+ * connection and the pool. Adds SSL when DB_SSL=true (required by
+ * cloud providers like Aiven, PlanetScale, etc.).
+ */
+function buildConnectionOptions(includeDatabase: boolean): ConnectionOptions {
+  const options: ConnectionOptions = {
+    host: env.DB_HOST,
+    port: env.DB_PORT,
+    user: env.DB_USER,
+    password: env.DB_PASSWORD,
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0,
+  };
+
+  if (includeDatabase) {
+    options.database = env.DB_NAME;
+  }
+
+  // Cloud-hosted MySQL (Aiven, PlanetScale, Railway) requires SSL.
+  // Setting `rejectUnauthorized: true` ensures the server certificate
+  // is verified against the default CA bundle.
+  if (env.DB_SSL) {
+    options.ssl = { rejectUnauthorized: true };
+  }
+
+  return options;
+}
+
+/**
  * Bootstraps the database:
- * 1. Creates the schema if it doesn't exist (via a throw-away connection).
+ * 1. Attempts to create the schema if it doesn't exist (skipped for
+ *    cloud providers that don't allow CREATE DATABASE).
  * 2. Creates a connection pool bound to that schema.
  * 3. Runs all CREATE TABLE IF NOT EXISTS statements.
  */
 export async function initializeDatabase(): Promise<void> {
-  // 1. Create a temporary connection to create the database
-  const tempConnection = await mysql.createConnection({
-    host: env.DB_HOST,
-    port: env.DB_PORT,
-    user: env.DB_USER,
-    password: env.DB_PASSWORD,
-  });
-
-  await tempConnection.execute(
-    `CREATE DATABASE IF NOT EXISTS \`${env.DB_NAME}\``
-  );
-  await tempConnection.end();
+  // 1. Try to create the database (local MySQL allows this;
+  //    cloud providers like Aiven pre-create the database, so
+  //    we gracefully skip on failure).
+  try {
+    const tempConnection = await mysql.createConnection(
+      buildConnectionOptions(false)
+    );
+    await tempConnection.execute(
+      `CREATE DATABASE IF NOT EXISTS \`${env.DB_NAME}\``
+    );
+    await tempConnection.end();
+  } catch (error) {
+    // Cloud-hosted MySQL (Aiven, etc.) may deny CREATE DATABASE.
+    // That's fine — the database already exists there.
+    console.log('ℹ️  Skipping CREATE DATABASE (cloud-hosted DB detected)');
+  }
 
   // 2. Create the connection pool with the database
-  pool = mysql.createPool({
-    host: env.DB_HOST,
-    port: env.DB_PORT,
-    user: env.DB_USER,
-    password: env.DB_PASSWORD,
-    database: env.DB_NAME,
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0,
-  });
+  pool = mysql.createPool(buildConnectionOptions(true));
 
-  // 3. Create tables
+  // 3. Verify connectivity
+  const connection = await pool.getConnection();
+  console.log('✅ Connected to MySQL successfully');
+  connection.release();
+
+  // 4. Create tables
   await createTables();
 
   console.log('✅ Database initialized successfully');
