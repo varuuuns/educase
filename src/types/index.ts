@@ -1,8 +1,3 @@
-// ---------------------------------------------------------------------------
-// GitHub API Response Types
-// ---------------------------------------------------------------------------
-
-/** Shape of the JSON returned by GET /users/:username from the GitHub API. */
 export interface GitHubUserResponse {
   login: string;
   id: number;
@@ -24,7 +19,6 @@ export interface GitHubUserResponse {
   type: string;
 }
 
-/** Shape of a single repo object returned by GET /users/:username/repos. */
 export interface GitHubRepoResponse {
   name: string;
   full_name: string;
@@ -38,16 +32,10 @@ export interface GitHubRepoResponse {
   pushed_at: string | null;
 }
 
-/** Shape of the language breakdown returned by GET /repos/:owner/:repo/languages. */
 export interface GitHubLanguagesResponse {
   [language: string]: number;
 }
 
-// ---------------------------------------------------------------------------
-// Domain Models (mirror the database schema)
-// ---------------------------------------------------------------------------
-
-/** A GitHub profile as stored in the `profiles` table. */
 export interface ProfileData {
   id?: number;
   github_username: string;
@@ -74,7 +62,6 @@ export interface ProfileData {
   updated_at?: Date;
 }
 
-/** A language record as stored in the `profile_languages` table. */
 export interface LanguageData {
   id?: number;
   profile_id: number;
@@ -83,7 +70,6 @@ export interface LanguageData {
   percentage: number;
 }
 
-/** A repository record as stored in the `profile_repositories` table. */
 export interface RepositoryData {
   id?: number;
   profile_id: number;
@@ -98,17 +84,10 @@ export interface RepositoryData {
   repo_url: string | null;
 }
 
-// ---------------------------------------------------------------------------
-// API Response DTOs
-// ---------------------------------------------------------------------------
-
-/** Full profile including related languages and top repositories. */
 export interface ProfileWithInsights extends ProfileData {
   languages: LanguageData[];
   top_repositories: RepositoryData[];
 }
-
-/** Lightweight profile used in list/pagination endpoints. */
 export interface ProfileListItem {
   id: number;
   github_username: string;
@@ -122,7 +101,6 @@ export interface ProfileListItem {
   analyzed_at: Date;
 }
 
-/** Standard paginated response envelope. */
 export interface PaginatedResponse<T> {
   success: boolean;
   data: T[];
@@ -134,13 +112,11 @@ export interface PaginatedResponse<T> {
   };
 }
 
-/** Standard single-item response envelope. */
 export interface SingleResponse<T> {
   success: boolean;
   data: T;
 }
 
-/** Standard error response envelope. */
 export interface ErrorResponse {
   success: false;
   error: {
@@ -149,11 +125,6 @@ export interface ErrorResponse {
   };
 }
 
-// ---------------------------------------------------------------------------
-// Query Types
-// ---------------------------------------------------------------------------
-
-/** Parsed and validated query-string parameters for the profile list endpoint. */
 export interface ProfileQueryParams {
   page: number;
   limit: number;
@@ -162,18 +133,25 @@ export interface ProfileQueryParams {
   order: 'asc' | 'desc';
 }
 
-/** Body of the POST /compare endpoint. */
 export interface CompareRequest {
   usernames: string[];
 }
 
-// ---------------------------------------------------------------------------
-// Aggregated Language Result
-// ---------------------------------------------------------------------------
-
-/** Language stats rolled up across all of a user's repositories. */
 export interface AggregatedLanguage {
   language: string;
   bytes: number;
   percentage: number;
+}
+
+export interface UserData {
+  id: number;
+  username: string;
+  email: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface AuthTokens {
+  token: string;
+  expiresIn: string;
 }
