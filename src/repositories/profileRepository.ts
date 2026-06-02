@@ -8,6 +8,7 @@ import {
   ProfileWithInsights,
   ProfileListItem,
   ProfileQueryParams,
+  SnapshotData,
 } from '../types';
 
 const ALLOWED_SORT_COLUMNS = [
@@ -65,6 +66,17 @@ interface RepoRow extends RowDataPacket {
   is_fork: number;
   last_pushed_at: Date | null;
   repo_url: string | null;
+}
+
+interface SnapshotRow extends RowDataPacket {
+  id: number;
+  profile_id: number;
+  followers: number;
+  following: number;
+  public_repos: number;
+  total_stars: number;
+  follower_ratio: string;
+  snapshot_at: Date;
 }
 
 interface CountRow extends RowDataPacket {
@@ -408,5 +420,44 @@ export class ProfileRepository implements IProfileRepository {
       last_pushed_at: row.last_pushed_at,
       repo_url: row.repo_url,
     };
+  }
+
+  async saveSnapshot(snapshot: SnapshotData): Promise<void> {
+    const pool = getPool();
+
+    await pool.execute(
+      `INSERT INTO profile_snapshots
+        (profile_id, followers, following, public_repos, total_stars, follower_ratio, snapshot_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        snapshot.profile_id,
+        snapshot.followers,
+        snapshot.following,
+        snapshot.public_repos,
+        snapshot.total_stars,
+        snapshot.follower_ratio,
+        snapshot.snapshot_at,
+      ],
+    );
+  }
+
+  async getSnapshots(profileId: number): Promise<SnapshotData[]> {
+    const pool = getPool();
+
+    const [rows] = await pool.execute<SnapshotRow[]>(
+      'SELECT * FROM profile_snapshots WHERE profile_id = ? ORDER BY snapshot_at ASC',
+      [profileId],
+    );
+
+    return rows.map((row) => ({
+      id: row.id,
+      profile_id: row.profile_id,
+      followers: row.followers,
+      following: row.following,
+      public_repos: row.public_repos,
+      total_stars: row.total_stars,
+      follower_ratio: parseFloat(String(row.follower_ratio)),
+      snapshot_at: row.snapshot_at,
+    }));
   }
 }

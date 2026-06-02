@@ -6,6 +6,7 @@ import {
   PaginatedResponse,
   ProfileWithInsights,
   ProfileListItem,
+  GrowthTrend,
 } from '../types';
 
 export class ProfileController {
@@ -77,5 +78,48 @@ export class ProfileController {
       data: results,
     };
     res.json(response);
+  };
+
+  // get the growth trends from snapshots
+  getGrowthTrend = async (req: Request, res: Response): Promise<void> => {
+    const username = req.params.username as string;
+    const trend = await this.profileService.getGrowthTrend(username);
+
+    const response: SingleResponse<GrowthTrend> = {
+      success: true,
+      data: trend,
+    };
+    res.json(response);
+  };
+
+  // manual snapshot trigger
+  snapshotAll = async (_req: Request, res: Response): Promise<void> => {
+    const { profiles } = await this.profileService.listProfiles({
+      page: 1, limit: 9999, sortBy: 'created_at', order: 'asc',
+    });
+
+    let success = 0;
+    let failed = 0;
+    const errors: string[] = [];
+
+    for (const profile of profiles) {
+      try {
+        await this.profileService.analyzeProfile(profile.github_username);
+        success++;
+      } catch (error) {
+        failed++;
+        errors.push(`${profile.github_username}: ${(error as Error).message}`);
+      }
+    }
+
+    res.json({
+      success: true,
+      data: {
+        total: profiles.length,
+        succeeded: success,
+        failed,
+        errors: errors.length > 0 ? errors : undefined,
+      },
+    });
   };
 }

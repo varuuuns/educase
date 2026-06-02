@@ -18,11 +18,11 @@ export function createProfileRouter(): Router {
 
   router.use(authenticate);
 
-  router.post(
-    '/compare',
-    validateCompareRequest,
-    asyncHandler(controller.compareProfiles)
-  );
+  router.post('/compare', validateCompareRequest, asyncHandler(controller.compareProfiles));
+
+  router.post('/snapshot-all', asyncHandler(controller.snapshotAll));
+
+  router.get('/', asyncHandler(controller.listProfiles));
 
   router.post(
     '/:username/analyze',
@@ -30,7 +30,11 @@ export function createProfileRouter(): Router {
     asyncHandler(controller.analyzeProfile)
   );
 
-  router.get('/', asyncHandler(controller.listProfiles));
+  router.get(
+    '/:username/growth',
+    validateUsername,
+    asyncHandler(controller.getGrowthTrend)
+  );
 
   router.get(
     '/:username',
