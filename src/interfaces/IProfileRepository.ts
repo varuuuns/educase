@@ -5,6 +5,7 @@ import {
   ProfileWithInsights,
   ProfileListItem,
   ProfileQueryParams,
+  SnapshotData,
 } from '../types';
 
 export interface IProfileRepository {
@@ -21,4 +22,8 @@ export interface IProfileRepository {
   softDelete(username: string): Promise<boolean>;
 
   findByUsernames(usernames: string[]): Promise<ProfileWithInsights[]>;
+
+  saveSnapshot(snapshot: SnapshotData): Promise<void>;
+
+  getSnapshots(profileId: number): Promise<SnapshotData[]>;
 }

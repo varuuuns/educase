@@ -155,3 +155,41 @@ export interface AuthTokens {
   token: string;
   expiresIn: string;
 }
+
+
+export interface SnapshotData {
+  id?: number;
+  profile_id: number;
+  followers: number;
+  following: number;
+  public_repos: number;
+  total_stars: number;
+  follower_ratio: number;
+  snapshot_at: Date;
+}
+
+export interface GrowthDelta {
+  followers_delta: number;
+  following_delta: number;
+  repos_delta: number;
+  stars_delta: number;
+  follower_ratio_delta: number;
+  period_days: number;
+}
+
+export interface SnapshotWithDelta extends SnapshotData {
+  delta: GrowthDelta | null;
+}
+
+export interface GrowthTrend {
+  username: string;
+  current: SnapshotData;
+  history: SnapshotWithDelta[];
+  summary: {
+    total_snapshots: number;
+    tracking_since: Date;
+    total_follower_growth: number;
+    total_star_growth: number;
+    total_new_repos: number;
+  };
+}
