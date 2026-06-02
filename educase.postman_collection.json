@@ -1,0 +1,270 @@
+{
+  "info": {
+    "_postman_id": "caf548ac-8ccc-4212-8358-694b777a2f25",
+    "name": "educase",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "33505686"
+  },
+  "item": [
+    {
+      "name": "register",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "",
+            "value": "",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"username\": \"varun\",\n    \"email\": \"varun@test.com\",\n    \"password\": \"secret123\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/register",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "register"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "login",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"email\": \"varun@test.com\",\n    \"password\": \"secret123\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/login",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "get_profiles",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "x-api-key",
+            "value": "{{x-api-key}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/profiles/octocat/analyze",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "profiles",
+            "octocat",
+            "analyze"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "view_profile",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [
+          {
+            "key": "x-api-key",
+            "value": "{{x-api-key}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/profiles/varuuuns",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "profiles",
+            "varuuuns"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "get_all_profiles",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [
+          {
+            "key": "x-api-key",
+            "value": "{{x-api-key}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/profiles",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "profiles"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "compare_users",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "x-api-key",
+            "value": "{{x-api-key}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"usernames\": [\"torvalds\", \"octocat\"]}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/profiles/compare",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "profiles",
+            "compare"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "soft_delete",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "x-api-key",
+            "value": "{{x-api-key}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/profiles/octocat",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "profiles",
+            "octocat"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "snapshot",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "x-api-key",
+            "value": "{{x-api-key}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{educase_base_url}}/api/profiles/snapshot-all",
+          "host": [
+            "{{educase_base_url}}"
+          ],
+          "path": [
+            "api",
+            "profiles",
+            "snapshot-all"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

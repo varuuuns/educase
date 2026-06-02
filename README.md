@@ -1,196 +1,128 @@
-# GitHub Profile Analyzer API
+# Educase - GitHub Profile Analyzer Backend
 
-A backend service that analyzes GitHub user profiles via the public GitHub API, derives useful insights (language breakdown, repo stats, activity metrics), and persists them in a MySQL database for later retrieval.
+Educase is a robust Node.js backend application designed to track, analyze, and compare GitHub profiles. By leveraging the GitHub API, Educase provides deep insights into developers' coding habits, follower growth, repository statistics, and most-used programming languages.
 
-## Tech Stack
+## 🚀 Features
 
-- **Runtime:** Node.js + TypeScript
-- **Framework:** Express.js
-- **Database:** MySQL
-- **HTTP Client:** Axios
-- **Third-Party API:** GitHub REST API v3
+- **Profile Analysis**: Fetch detailed metrics from a GitHub user, including their repos, gists, followers, follower ratio, and top languages.
+- **Growth Tracking (Cron Job)**: Automatically takes weekly snapshots of follower counts, stars, and repository counts to track a developer's growth over time.
+- **Profile Comparison**: Compare multiple GitHub users side-by-side to see who has the best metrics.
+- **Soft Deletes**: Safely remove profiles from the active dashboard without losing the historical data in the database.
+- **Secure Authentication**: Endpoints are protected via JSON Web Tokens (JWT) or an `x-api-key` header.
 
-## Features
+## 🛠️ Tech Stack
 
-| Feature | Description |
-|---|---|
-| **Profile Analysis** | Fetch and analyze any public GitHub profile |
-| **Language Breakdown** | Aggregate language usage across all repos with percentages |
-| **Top Repositories** | Store the top 10 repos by stars with full metadata |
-| **Pagination + Search** | List profiles with `page`, `limit`, `search`, `sortBy`, `order` |
-| **Profile Comparison** | Compare 2-5 profiles side-by-side |
-| **Soft Delete** | Mark profiles as deleted without losing data |
-| **Re-analysis** | Re-analyzing updates existing data instead of duplicating |
-| **API Key Auth** | All endpoints protected by `x-api-key` header |
-| **Derived Insights** | Follower ratio, account age in days |
-
-## Architecture (SOLID Principles)
-
-```
-src/
-├── config/          # Environment + Database configuration
-├── interfaces/      # Abstractions (DIP: Dependency Inversion)
-├── repositories/    # Data access layer (SRP: Single Responsibility)
-├── services/        # Business logic (OCP: Open-Closed)
-├── controllers/     # HTTP handlers (SRP: only HTTP concerns)
-├── middleware/       # Auth, validation, error handling
-├── routes/          # Route definitions + DI composition root
-├── types/           # Shared DTOs and type definitions
-├── errors/          # Custom error hierarchy
-└── utils/           # Shared utilities
-```
-
-## Setup
-
-### Prerequisites
-- Node.js 18+
-- MySQL 8.0+
-- A GitHub Personal Access Token (optional but recommended)
-
-### Installation
-
-```bash
-# 1. Clone and install
-git clone <repo-url>
-cd educase
-npm install
-
-# 2. Configure environment
-cp .env.example .env
-# Edit .env with your MySQL credentials and optional GitHub token
-
-# 3. Start development server (auto-creates database + tables)
-npm run dev
-```
-
-### Environment Variables
-
-| Variable | Required | Default | Description |
-|---|---|---|---|
-| `PORT` | No | `3000` | Server port |
-| `DB_HOST` | Yes | - | MySQL host |
-| `DB_PORT` | No | `3306` | MySQL port |
-| `DB_USER` | Yes | - | MySQL user |
-| `DB_PASSWORD` | Yes | - | MySQL password |
-| `DB_NAME` | Yes | - | Database name (auto-created) |
-| `GITHUB_TOKEN` | No | - | GitHub PAT (increases rate limit to 5,000/hr) |
-| `API_KEY` | Yes | - | API key for authenticating requests |
-
-## API Reference
-
-> **Authentication:** All endpoints (except health check) require the `x-api-key` header.
-
-### Health Check
-```
-GET /api/health
-```
-No authentication required. Returns `{ status: "ok" }`.
+- **Runtime**: Node.js with TypeScript
+- **Database**: MySQL (Aiven) / SQLite
+- **API Requests**: Axios
+- **Authentication**: JWT & API Keys
+- **Scheduling**: Node-Cron (for weekly snapshots)
 
 ---
 
-### Analyze a Profile
-```
-POST /api/profiles/:username/analyze
-```
-Fetches fresh data from GitHub, computes insights, and stores everything.
+## ⚙️ Setup & Installation
 
-**Example:**
-```bash
-curl -X POST http://localhost:3000/api/profiles/torvalds/analyze \
-  -H "x-api-key: your-api-key"
-```
+1. **Clone and Install**
+   ```bash
+   git clone <repo-url>
+   cd educase
+   npm install
+   ```
 
----
+2. **Environment Variables**
+   Create a `.env` file in the root directory:
+   ```env
+   PORT=3000
+   DB_HOST=...
+   DB_USER=...
+   DB_PASSWORD=...
+   DB_NAME=...
+   GITHUB_TOKEN=ghp_YourPersonalAccessToken   # CRITICAL: Increases rate limit to 5000/hr
+   JWT_SECRET=your_jwt_secret
+   API_KEY=your_api_key
+   ```
 
-### List All Profiles
-```
-GET /api/profiles
-```
+3. **Start the Server**
+   ```bash
+   # Development mode
+   npm run dev
 
-**Query Parameters:**
-
-| Param | Type | Default | Description |
-|---|---|---|---|
-| `page` | number | 1 | Page number |
-| `limit` | number | 10 | Results per page (max 100) |
-| `search` | string | - | Filter by username or name |
-| `sortBy` | string | `analyzed_at` | Sort column: `followers`, `public_repos`, `analyzed_at`, `account_age_days`, `follower_ratio` |
-| `order` | string | `desc` | Sort order: `asc` or `desc` |
-
-**Example:**
-```bash
-curl http://localhost:3000/api/profiles?search=tor&sortBy=followers&order=desc \
-  -H "x-api-key: your-api-key"
-```
+   # Production build
+   npm run build
+   npm start
+   ```
 
 ---
 
-### Get Single Profile
-```
-GET /api/profiles/:username
-```
-Returns full profile with language breakdown and top repositories.
+## 📚 API Documentation
 
-```bash
-curl http://localhost:3000/api/profiles/torvalds \
-  -H "x-api-key: your-api-key"
-```
+You can test these endpoints using Postman. For protected endpoints, either use a JWT token (via the `Authorization: Bearer <token>` header) after logging in, or provide the `x-api-key` header.
 
----
+### Authentication
 
-### Delete a Profile
-```
-DELETE /api/profiles/:username
-```
-Soft-deletes the profile (excluded from listings but data preserved).
-
-```bash
-curl -X DELETE http://localhost:3000/api/profiles/torvalds \
-  -H "x-api-key: your-api-key"
-```
-
----
-
-### Compare Profiles
-```
-POST /api/profiles/compare
-```
-Compare 2-5 previously analyzed profiles side-by-side.
-
-```bash
-curl -X POST http://localhost:3000/api/profiles/compare \
-  -H "Content-Type: application/json" \
-  -H "x-api-key: your-api-key" \
-  -d '{"usernames": ["torvalds", "octocat"]}'
-```
-
-## Error Responses
-
-All errors follow a consistent format:
-
-```json
-{
-  "success": false,
-  "error": {
-    "message": "Description of the error",
-    "code": 404
+#### 1. Register a new user
+- **URL**: `POST /api/auth/register`
+- **Body** (JSON):
+  ```json
+  {
+      "username": "varun",
+      "email": "varun@test.com",
+      "password": "secret123"
   }
-}
-```
+  ```
 
-| Code | Description |
-|---|---|
-| 400 | Validation error (invalid input) |
-| 401 | Unauthorized (missing or invalid API key) |
-| 404 | Resource not found |
-| 429 | GitHub API rate limit exceeded |
-| 500 | Internal server error |
-| 502 | GitHub API error |
+#### 2. Login
+- **URL**: `POST /api/auth/login`
+- **Body** (JSON):
+  ```json
+  {
+      "email": "varun@test.com",
+      "password": "secret123"
+  }
+  ```
 
-## Scripts
+### Profiles Management
 
-```bash
-npm run dev      # Start dev server with hot reload
-npm run build    # Compile TypeScript to dist/
-npm start        # Run compiled production build
-```
+#### 3. Analyze a Profile
+Fetches a user from GitHub, calculates their metrics, and saves them to the database.
+- **URL**: `POST /api/profiles/:username/analyze`
+- **Headers**: `x-api-key: <your_key>`
+- **Example**: `POST /api/profiles/octocat/analyze`
+
+#### 4. Get All Profiles
+Retrieves a paginated list of all tracked profiles in the database.
+- **URL**: `GET /api/profiles`
+- **Headers**: `x-api-key: <your_key>`
+
+#### 5. View Specific Profile
+Retrieves detailed insights and language breakdowns for a single profile.
+- **URL**: `GET /api/profiles/:username`
+- **Headers**: `x-api-key: <your_key>`
+- **Example**: `GET /api/profiles/varuuuns`
+
+#### 6. Compare Users
+Compare statistics between two or more tracked profiles.
+- **URL**: `POST /api/profiles/compare`
+- **Headers**: `x-api-key: <your_key>`
+- **Body** (JSON):
+  ```json
+  {
+      "usernames": ["torvalds", "octocat"]
+  }
+  ```
+
+#### 7. Soft Delete Profile
+Marks a profile as deleted without removing its historical data from the database.
+- **URL**: `DELETE /api/profiles/:username`
+- **Headers**: `x-api-key: <your_key>`
+- **Example**: `DELETE /api/profiles/octocat`
+
+#### 8. Trigger Manual Snapshot
+Manually triggers the weekly growth snapshot logic for all active profiles.
+- **URL**: `GET /api/profiles/snapshot-all`
+- **Headers**: `x-api-key: <your_key>`
+
+---
+
+## 🔒 Rate Limiting Note
+Ensure your `GITHUB_TOKEN` is properly set in the `.env` file. Without it, GitHub limits API calls to 60 per hour, which is easily exhausted during profile analysis. With the token, the limit increases to 5,000 per hour.
