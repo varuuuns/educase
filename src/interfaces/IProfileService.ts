@@ -2,6 +2,7 @@ import {
   ProfileWithInsights,
   ProfileListItem,
   ProfileQueryParams,
+  GrowthTrend,
 } from '../types';
 
 export interface IProfileService {
@@ -14,4 +15,6 @@ export interface IProfileService {
   deleteProfile(username: string): Promise<void>;
 
   compareProfiles(usernames: string[]): Promise<ProfileWithInsights[]>;
+
+  getGrowthTrend(username: string): Promise<GrowthTrend>;
 }

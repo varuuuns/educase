@@ -11,6 +11,9 @@ import {
   GitHubUserResponse,
   GitHubRepoResponse,
   AggregatedLanguage,
+  GrowthTrend,
+  SnapshotWithDelta,
+  GrowthDelta,
 } from '../types';
 import { NotFoundError, ValidationError } from '../errors/AppError';
 
@@ -20,7 +23,6 @@ export class ProfileService implements IProfileService {
     private readonly profileRepository: IProfileRepository
   ) {}
 
- // get profile from github
   async analyzeProfile(username: string): Promise<ProfileWithInsights> {
     const user = await this.githubService.fetchUserProfile(username);
     const repos = await this.githubService.fetchUserRepos(username);
@@ -36,13 +38,23 @@ export class ProfileService implements IProfileService {
     );
 
     const profileData = this.mapToProfileData(user, followerRatio, accountAgeDays);
-
     const profileId = await this.profileRepository.upsertProfile(profileData);
     const languageData = this.mapToLanguageData(languages, profileId);
     const repositoryData = this.mapToRepositoryData(topRepos, profileId);
 
     await this.profileRepository.replaceLanguages(profileId, languageData);
     await this.profileRepository.replaceRepositories(profileId, repositoryData);
+
+    const totalStars = repos.reduce((sum, r) => sum + r.stargazers_count, 0);
+    await this.profileRepository.saveSnapshot({
+      profile_id: profileId,
+      followers: user.followers,
+      following: user.following,
+      public_repos: user.public_repos,
+      total_stars: totalStars,
+      follower_ratio: Math.round(followerRatio * 100) / 100,
+      snapshot_at: new Date(),
+    });
 
     const result = await this.profileRepository.findByUsername(username);
     if (!result) {
@@ -52,7 +64,6 @@ export class ProfileService implements IProfileService {
     return result;
   }
 
-  // retrive from db
   async getProfile(username: string): Promise<ProfileWithInsights> {
     const profile = await this.profileRepository.findByUsername(username);
     if (!profile) {
@@ -61,14 +72,12 @@ export class ProfileService implements IProfileService {
     return profile;
   }
 
-  // get every profile
   async listProfiles(
     params: ProfileQueryParams
   ): Promise<{ profiles: ProfileListItem[]; total: number }> {
     return this.profileRepository.findAll(params);
   }
 
-  // soft delete profile
   async deleteProfile(username: string): Promise<void> {
     const deleted = await this.profileRepository.softDelete(username);
     if (!deleted) {
@@ -76,8 +85,6 @@ export class ProfileService implements IProfileService {
     }
   }
 
-
-  // compare profiles in array
   async compareProfiles(usernames: string[]): Promise<ProfileWithInsights[]> {
     if (usernames.length < 2) {
       throw new ValidationError('At least 2 usernames are required for comparison');
@@ -99,6 +106,58 @@ export class ProfileService implements IProfileService {
     }
 
     return profiles;
+  }
+
+  async getGrowthTrend(username: string): Promise<GrowthTrend> {
+    const profile = await this.profileRepository.findByUsername(username);
+    if (!profile) {
+      throw new NotFoundError(`Profile "${username}"`);
+    }
+
+    const snapshots = await this.profileRepository.getSnapshots(profile.id!);
+
+    if (snapshots.length === 0) {
+      throw new NotFoundError(
+        `No snapshots found for "${username}". Analyze the profile first.`
+      );
+    }
+
+    const history: SnapshotWithDelta[] = snapshots.map((snapshot, index) => {
+      if (index === 0) {
+        return { ...snapshot, delta: null };
+      }
+
+      const prev = snapshots[index - 1]!;
+      const periodMs = snapshot.snapshot_at.getTime() - prev.snapshot_at.getTime();
+      const periodDays = Math.max(1, Math.round(periodMs / (1000 * 60 * 60 * 24)));
+
+      const delta: GrowthDelta = {
+        followers_delta: snapshot.followers - prev.followers,
+        following_delta: snapshot.following - prev.following,
+        repos_delta: snapshot.public_repos - prev.public_repos,
+        stars_delta: snapshot.total_stars - prev.total_stars,
+        follower_ratio_delta: Math.round((snapshot.follower_ratio - prev.follower_ratio) * 100) / 100,
+        period_days: periodDays,
+      };
+
+      return { ...snapshot, delta };
+    });
+
+    const first = snapshots[0]!;
+    const last = snapshots[snapshots.length - 1]!;
+
+    return {
+      username,
+      current: last,
+      history,
+      summary: {
+        total_snapshots: snapshots.length,
+        tracking_since: first.snapshot_at,
+        total_follower_growth: last.followers - first.followers,
+        total_star_growth: last.total_stars - first.total_stars,
+        total_new_repos: last.public_repos - first.public_repos,
+      },
+    };
   }
 
   private mapToProfileData(
