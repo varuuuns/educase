@@ -5,6 +5,10 @@ import { initializeDatabase } from './config/db';
 import { createProfileRouter } from './routes/profileRoutes';
 import { createAuthRouter } from './routes/authRoutes';
 import { errorHandler } from './middleware/errorHandler';
+import { startSnapshotScheduler } from './jobs/snapshotScheduler';
+import { GitHubService } from './services/githubService';
+import { ProfileRepository } from './repositories/profileRepository';
+import { ProfileService } from './services/profileService';
 
 async function bootstrap(): Promise<void> {
   const app = express();
@@ -28,11 +32,16 @@ async function bootstrap(): Promise<void> {
     });
   });
 
-  app.use(errorHandler);
+    app.use(errorHandler);
 
   app.listen(env.PORT, () => {
-    console.log('\n🚀 GitHub Profile Analyzer API');
     console.log(`   Server running at:${env.PORT}`);
+    console.log('');
+
+    const githubService = new GitHubService(env.GITHUB_TOKEN);
+    const profileRepository = new ProfileRepository();
+    const profileService = new ProfileService(githubService, profileRepository);
+    startSnapshotScheduler(profileService, profileRepository);
   });
 }
 

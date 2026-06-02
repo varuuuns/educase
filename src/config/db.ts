@@ -124,6 +124,21 @@ async function createTables(): Promise<void> {
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       )
     `);
+
+    await connection.execute(`
+      CREATE TABLE IF NOT EXISTS profile_snapshots (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        profile_id INT NOT NULL,
+        followers INT DEFAULT 0,
+        following INT DEFAULT 0,
+        public_repos INT DEFAULT 0,
+        total_stars INT DEFAULT 0,
+        follower_ratio DECIMAL(10,2) DEFAULT 0,
+        snapshot_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE,
+        INDEX idx_profile_snapshot (profile_id, snapshot_at)
+      )
+    `);
   } finally {
     connection.release();
   }
